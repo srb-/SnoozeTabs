@@ -6,6 +6,10 @@ import classnames from 'classnames';
 import { PICK_TIME, times, timeForId } from '../times';
 
 import DatePickerPanel from './DatePickerPanel';
+import { makeLogger } from '../utils';
+
+const log = makeLogger('FE <SnoozePopup>');
+
 
 export default class MainPanel extends React.Component {
   constructor(props) {
@@ -13,8 +17,28 @@ export default class MainPanel extends React.Component {
     this.state = {
       datepickerActive: false,
       dateChoice: null,
-      defaultDateChoice: props.moment()
+      defaultDateChoice: props.moment(),
+      itemIndex: 0
     };
+
+    this.keyboardHandler = this.keyboardHandler.bind(this);
+  }
+
+  componentDidMount() {
+    document.addEventListener('keydown', this.keyboardHandler, false);
+  }
+
+  componentWillUnmount() {
+    document.removeEventListener('keydown', this.keyboardHandler, false);
+  }
+
+  keyboardHandler(ev) {
+    log('YESSSSS ' + ev.key); // ArrowUp, ArrowDown, Tab, Enter
+    if (ev.key === 'ArrowDown') {
+      this.setState((prevState) => ({
+        itemIndex: prevState.itemIndex + 1
+      }));
+    }
   }
 
   render() {
@@ -26,7 +50,7 @@ export default class MainPanel extends React.Component {
         <div id={id} className={classnames('static', 'panel', { active, obscured: datepickerActive })}>
           <div className="content">
             <ul className="times">
-              { times.map(item => this.renderTime(item)) }
+              { times.map((item, index) => this.renderTime(item, index)) }
             </ul>
           </div>
           <div className="footer">
@@ -46,10 +70,16 @@ export default class MainPanel extends React.Component {
     );
   }
 
-  renderTime(item) {
+  renderTime(item, index) {
     const [, date] = timeForId(this.props.moment(), item.id);
+
+    let classNames = 'option';
+    if (index === this.state.itemIndex) {
+      classNames = classNames + ' steve';
+    }
+
     return (
-      <li className="option" key={item.id} id={item.id} onClick={ ev => this.handleOptionClick(ev, item) }>
+      <li className={classNames} key={item.id} id={item.id} onClick={ ev => this.handleOptionClick(ev, item) }>
         <img src={ `../icons/${item.icon || 'nightly.svg'}` } className="icon" />
         <div className="title">{item.title || '&nbsp;'}</div>
         <div className="date" onClick={ev => this.handleOptionDateClick(ev, item)}>{date}</div>
